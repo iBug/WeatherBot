@@ -1,0 +1,12 @@
+{
+  "caiyun": {
+    "token": "example token",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "retry": 3
+  },
+  "telegram": {
+    "target": "chat id",
+    "token": "bot token"
+  }
+}
