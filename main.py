@@ -19,6 +19,7 @@ from telegram.utils.helpers import escape_markdown
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(DIR, "config.json")
+DATA_FILE = os.path.join(DIR, "data.json")
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,22 @@ class CaiYun:
         with open(self.cache_file, "w") as f:
             json.dump(data, f, separators=(',', ':'))
         return data
+
+
+class SaveData():
+    def __init__(self, filename):
+        self.filename = filename
+        self.data = {}
+        self.load()
+
+    def load(self):
+        if os.path.exists(self.filename):
+            with open(self.filename, 'r') as f:
+                self.data = json.load(f)
+
+    def save(self):
+        with open(self.filename, 'w') as f:
+            json.dump(self.data, f, separators=(',', ':'))
 
 
 def setup():
@@ -167,6 +184,33 @@ def update_precipitation():
     bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['precipitation_id'], media=media)
 
 
+def update_alert():
+    config, bot, api_data = setup()
+    alert_data = api_data['result']['alert']
+    if alert_data['status'] != "ok":
+        return
+
+    save_data = SaveData(DATA_FILE)
+    last_timestamp = save_data.data.get('alert_timestamp', 0)
+    next_timestamp = last_timestamp
+
+    for content in alert_data['content']:
+        timestamp = content['pubtimestamp']
+        if timestamp <= last_timestamp:
+            # Already processed
+            return
+        date = datetime.datetime.fromtimestamp(timestamp)
+        date_s = date.strftime("%Y 年 %m 月 %d 日 {} %H:%M:%S").format(texts.weekday(date.weekday()))
+        text = "*【{}】*\n".format(escape_markdown(content['title'], 2))
+        text += escape_markdown(content['description'], 2) + f"\n\n*发布时间*：{escape_markdown(date_s, 2)}\n\\#预警"
+        bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
+                         disable_web_page_preview=True)
+        if timestamp > next_timestamp:
+            next_timestamp = timestamp 
+    save_data.data['alert_timestamp'] = next_timestamp
+    save_data.save()
+
+
 def send_forecast():
     config, bot, api_data = setup()
     daily_data = api_data['result']['daily']
@@ -205,16 +249,30 @@ def send_forecast():
 
 
 def lambda_main(event, context):
-    send_forecast()
+    pass
 
 
 def main():
     if len(sys.argv) == 1:
         return send_forecast()
     action = sys.argv[1]
-    if action == "realtime":
+    if action == "cron":
+        try:
+            update_realtime()
+        except Exception:
+            pass
+        try:
+            update_alert()
+        except Exception:
+            pass
+        try:
+            update_precipitation()
+        except Exception:
+            pass
+    elif action == "realtime":
         update_realtime()
-        update_precipitation()
+    elif action == "alert":
+        return update_alert()
     elif action == "precipitation":
         return update_precipitation()
     else:

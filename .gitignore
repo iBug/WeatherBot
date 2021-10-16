@@ -15,5 +15,6 @@ venv.bak/
 # Config
 config.json
 
-# Caches
+# Data & Caches
+data.json
 cache.json
