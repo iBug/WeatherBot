@@ -1,11 +1,14 @@
 {
   "caiyun": {
+    "cache_file": "cache.json",
+    "cache_ttl": 55,
     "token": "example token",
     "latitude": 0.0,
     "longitude": 0.0,
     "retry": 3
   },
   "telegram": {
+    "realtime_id": 1,
     "target": "chat id",
     "token": "bot token"
   }
