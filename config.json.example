@@ -10,6 +10,7 @@
   "telegram": {
     "realtime_id": 1,
     "precipitation_id": 2,
+    "temperature_id": 3,
     "target": "chat id",
     "token": "bot token"
   }

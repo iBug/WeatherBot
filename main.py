@@ -10,7 +10,6 @@ import json
 import logging
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
 import os
 import requests
 import sys
@@ -26,6 +25,8 @@ from classes import CaiYun, SaveData
 DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(DIR, "config.json")
 DATA_FILE = os.path.join(DIR, "data.json")
+
+matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
 
 
 def setup():
@@ -55,10 +56,8 @@ def extract_daily(daily_data, days=0):
 def plot_precipitation(api_data):
     try:
         precipitation = api_data['result']['minutely']['precipitation_2h']
-        matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
         plt.figure(figsize=(6, 3))
-        # plt.xlabel("Time (min)")
-        plt.plot(np.arange(120), np.array(precipitation))
+        plt.plot(range(120), precipitation, "b-")
         plt.ylim(bottom=0)
         if plt.axis()[3] > 0.03:
             plt.hlines(0.03, 0, 120, colors='skyblue', linestyles='dashed')
@@ -108,7 +107,10 @@ def update_realtime():
            f"\n紫外线：{ultraviolet}" \
            f"\n舒适度：{comfort}" \
            ""
-    text = heading + escape_markdown(text, 2) + f"\n\n*{date_s}*\n[未来 2 小时降水](https://t.me/ustc_weather/{config['telegram']['precipitation_id']})"
+    text = heading + escape_markdown(text, 2) + \
+               f"\n\n*{date_s}*" \
+               f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config['telegram']['precipitation_id']})" \
+               f"\n[未来 24 小时温度](https://t.me/ustc_weather/{config['telegram']['temperature_id']})"
     bot.edit_message_text(chat_id=config['telegram']['target'], message_id=config['telegram']['realtime_id'],
                           text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
     #title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
@@ -129,6 +131,43 @@ def update_precipitation():
     media = telegram.InputMediaPhoto(buf, caption=caption, parse_mode="MarkdownV2")
 
     bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['precipitation_id'], media=media)
+
+
+def update_temperature():
+    config, bot, api_data = setup()
+    data = api_data['result']['hourly']
+    if data['status'] != "ok":
+        return
+
+    date = datetime.datetime.fromtimestamp(api_data['server_time'])
+    date_s = date.strftime("%Y 年 %m 月 %d 日 {} %H:%M").format(texts.weekday(date.weekday()))
+
+    x, y = zip(*[
+        (datetime.datetime.fromisoformat(item['datetime']).replace(tzinfo=None), item['value'])
+        for item in data['temperature'][:24]
+    ])
+    plt.figure(figsize=(6, 4))
+    plt.plot(x, y, 'g.-')
+    plt.gca().xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M"))
+    plt.gcf().autofmt_xdate(rotation=0, ha="center")
+    ax = plt.gca().xaxis
+    #for i, v in enumerate(y):
+    for t, v in zip(x, y):
+        if t.hour % 2 == 1:
+            continue
+        props = {'boxstyle': 'circle', 'facecolor': 'white', 'alpha': 0.5, 'ls': ''}
+        plt.text(t, v - 0.1, f"{v:.1f}", ha="center", size=11, bbox=props)
+    plt.title("Temperature on {}".format(date.strftime("%B %d, %Y")), weight='bold')
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    plt.close('all')
+
+    buf.seek(0)
+    caption = data['description'] + f"\n*{date_s}*"
+    media = telegram.InputMediaPhoto(buf, caption=caption, parse_mode="MarkdownV2")
+
+    bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['temperature_id'], media=media)
 
 
 def update_alert():
@@ -216,6 +255,10 @@ def main(args):
         except Exception:
             pass
         try:
+            update_temperature()
+        except Exception:
+            pass
+        try:
             update_precipitation()
         except Exception:
             pass
@@ -228,6 +271,8 @@ def main(args):
         return update_alert()
     elif action == "precipitation":
         return update_precipitation()
+    elif action == "temperature":
+        return update_temperature()
     else:
         raise ValueError(f"Unknown action {action}")
 
