@@ -190,7 +190,7 @@ def send_forecast():
            f"\n紫外线：{ultraviolet}" \
            f"\n舒适度：{comfort}" \
            ""
-    text = f"【天气预报】\n*{date_s}*" + escape_markdown(text, 2)
+    text = f"\\#天气预报\n*{date_s}*" + escape_markdown(text, 2)
     bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
                      disable_web_page_preview=True)  # , disable_notification=True)
 
@@ -200,10 +200,12 @@ def lambda_main(event, context):
 
 
 def main(args):
+    logger.logger.setLevel(logger.level_s[args.verbose.upper()])
     if not args.action:
-        return send_forecast()
+        logging.warning(f"No action specified, exiting")
+        return
     action = args.action
-    logging.info(f"Command-line action: {action}")
+    logging.info(f"Action: {action}")
     if action == "cron":
         try:
             update_realtime()
@@ -218,6 +220,8 @@ def main(args):
         except Exception:
             pass
         return
+    elif action == "forecast":
+        return send_forecast()
     elif action == "realtime":
         return update_realtime()
     elif action == "alert":
@@ -231,5 +235,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="a Telegram weather bot")
     parser.add_argument("action", type=str, nargs="?")
+    parser.add_argument("-v", "--verbose", metavar="level", type=str, nargs="?", const="debug", default="warning",
+                        choices=[x.lower() for x in logger.level_s], help="logging/verbosity level")
     args = parser.parse_args()
     main(args)
