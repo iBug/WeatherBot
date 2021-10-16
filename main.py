@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+
+import logger
+
+import argparse
 import datetime
 import io
 import json
@@ -16,69 +20,12 @@ import time
 import texts
 from telegram.utils.helpers import escape_markdown
 
+from classes import CaiYun, SaveData
+
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(DIR, "config.json")
 DATA_FILE = os.path.join(DIR, "data.json")
-
-logger = logging.getLogger(__name__)
-
-
-class CaiYun:
-    def __init__(self, config):
-        self.config = dict(config)
-        self.cache_file = os.path.join(DIR, config['cache_file'])
-        self.cache_ttl = config['cache_ttl']
-
-    def get_cache(self):
-        if not os.path.exists(self.cache_file):
-            return False
-        with open(self.cache_file, "r") as f:
-            now = time.time()
-            data = json.load(f)
-        if now < data['server_time'] + self.cache_ttl:
-            return data
-        return None  # cache expired
-
-    def fetch_api(self):
-        cache = self.get_cache()
-        if cache:
-            return cache
-
-        url = 'https://api.caiyunapp.com/v2.5/{}/{},{}/weather.json?lang=zh_CN&alert=true'.format(
-            self.config['token'], self.config['longitude'], self.config['latitude'])
-        for _ in range(self.config['retry']):
-            try:
-                res = requests.get(url)
-                res.raise_for_status()
-                data = res.json()
-                if data['status'] == 'ok':
-                    break
-            except Exception:
-                exc_type, exc_val, exc_tb = sys.exc_info()
-                print(f"{exc_type.__name__}: {exc_val}", file=sys.stderr)
-                time.sleep(1)
-        else:
-            return None
-        with open(self.cache_file, "w") as f:
-            json.dump(data, f, separators=(',', ':'))
-        return data
-
-
-class SaveData():
-    def __init__(self, filename):
-        self.filename = filename
-        self.data = {}
-        self.load()
-
-    def load(self):
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as f:
-                self.data = json.load(f)
-
-    def save(self):
-        with open(self.filename, 'w') as f:
-            json.dump(self.data, f, separators=(',', ':'))
 
 
 def setup():
@@ -161,7 +108,7 @@ def update_realtime():
            f"\n紫外线：{ultraviolet}" \
            f"\n舒适度：{comfort}" \
            ""
-    text = heading + escape_markdown(text, 2) + f"\n*{date_s}*"
+    text = heading + escape_markdown(text, 2) + f"\n\n*{date_s}*\n[未来 2 小时降水](https://t.me/ustc_weather/{config['telegram']['precipitation_id']})"
     bot.edit_message_text(chat_id=config['telegram']['target'], message_id=config['telegram']['realtime_id'],
                           text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
     #title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
@@ -252,10 +199,11 @@ def lambda_main(event, context):
     pass
 
 
-def main():
-    if len(sys.argv) == 1:
+def main(args):
+    if not args.action:
         return send_forecast()
-    action = sys.argv[1]
+    action = args.action
+    logging.info(f"Command-line action: {action}")
     if action == "cron":
         try:
             update_realtime()
@@ -269,8 +217,9 @@ def main():
             update_precipitation()
         except Exception:
             pass
+        return
     elif action == "realtime":
-        update_realtime()
+        return update_realtime()
     elif action == "alert":
         return update_alert()
     elif action == "precipitation":
@@ -280,4 +229,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="a Telegram weather bot")
+    parser.add_argument("action", type=str, nargs="?")
+    args = parser.parse_args()
+    main(args)
