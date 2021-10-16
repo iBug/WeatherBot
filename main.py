@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 
 import datetime
+import io
 import json
 import logging
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import requests
 import sys
@@ -86,6 +88,34 @@ def extract_daily(daily_data, days=0):
     return daily
 
 
+def plot_precipitation(api_data):
+    try:
+        precipitation = api_data['result']['minutely']['precipitation_2h']
+        matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
+        plt.figure(figsize=(6, 3))
+        # plt.xlabel("Time (min)")
+        plt.plot(np.arange(120), np.array(precipitation))
+        plt.ylim(bottom=0)
+        if plt.axis()[3] > 0.03:
+            plt.hlines(0.03, 0, 120, colors='skyblue', linestyles='dashed')
+        if plt.axis()[3] > 0.25:
+            plt.hlines(0.25, 0, 120, colors='blue', linestyles='dashed')
+        if plt.axis()[3] > 0.35:
+            plt.hlines(0.35, 0, 120, colors='orange', linestyles='dashed')
+        if plt.axis()[3] > 0.48:
+            plt.hlines(0.48, 0, 120, colors='darkred', linestyles='dashed')
+
+        plt.title("Precipitation in 2 hours", weight="bold")
+
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png")
+        buf.seek(0)
+        plt.close('all')
+        return buf.read()
+    except Exception:
+        return None
+
+
 def update_realtime():
     config, bot, api_data = setup()
     data = api_data['result']['realtime']
@@ -117,10 +147,24 @@ def update_realtime():
     text = heading + escape_markdown(text, 2) + f"\n*{date_s}*"
     bot.edit_message_text(chat_id=config['telegram']['target'], message_id=config['telegram']['realtime_id'],
                           text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
-    return
+    #title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
+    #bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
 
-    title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
-    bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
+
+def update_precipitation():
+    config, bot, api_data = setup()
+    data = api_data['result']['minutely']
+    if data['status'] != "ok":
+        return
+
+    date = datetime.datetime.fromtimestamp(api_data['server_time'])
+    date_s = date.strftime("%Y 年 %m 月 %d 日 {} %H:%M").format(texts.weekday(date.weekday()))
+
+    buf = plot_precipitation(api_data)
+    caption = api_data['result']['forecast_keypoint'] + f"\n*{date_s}*"
+    media = telegram.InputMediaPhoto(buf, caption=caption, parse_mode="MarkdownV2")
+
+    bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['precipitation_id'], media=media)
 
 
 def send_forecast():
@@ -155,7 +199,7 @@ def send_forecast():
            f"\n紫外线：{ultraviolet}" \
            f"\n舒适度：{comfort}" \
            ""
-    text = f"【天气预报】\n*{date_s}*" + telegram.utils.helpers.escape_markdown(text, 2)
+    text = f"【天气预报】\n*{date_s}*" + escape_markdown(text, 2)
     bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
                      disable_web_page_preview=True)  # , disable_notification=True)
 
@@ -169,7 +213,10 @@ def main():
         return send_forecast()
     action = sys.argv[1]
     if action == "realtime":
-        return update_realtime()
+        update_realtime()
+        update_precipitation()
+    elif action == "precipitation":
+        return update_precipitation()
     else:
         raise ValueError(f"Unknown action {action}")
 
