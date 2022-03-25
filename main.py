@@ -193,7 +193,7 @@ def update_alert():
         timestamp = content['pubtimestamp']
         if timestamp <= last_timestamp:
             # Already processed
-            return
+            continue
         date = datetime.datetime.fromtimestamp(timestamp)
         date_s = date.strftime("%Y年%m月%d日 {} %H:%M:%S").format(texts.weekday(date.weekday()))
         text = "*【{}】*\n".format(escape_markdown(content['title'], 2))
