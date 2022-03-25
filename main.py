@@ -15,6 +15,7 @@ import requests
 import sys
 import telegram
 import time
+import traceback
 
 import texts
 from telegram.utils.helpers import escape_markdown
@@ -27,6 +28,14 @@ CONFIG_FILE = os.path.join(DIR, "config.json")
 DATA_FILE = os.path.join(DIR, "data.json")
 
 matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
+
+
+def print_exception(file=sys.stderr):
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    if str(exc_obj).startswith("Message is not modified:"):
+        return
+    exc_tb = traceback.format_exc()
+    print("{}: {}\n{}".format(exc_type.__name__, exc_obj, exc_tb), file=file)
 
 
 def setup():
@@ -249,15 +258,15 @@ def main(args):
         try:
             update_realtime()
         except Exception:
-            pass
-        try:
-            update_alert()
-        except Exception:
-            pass
+            print_exception()
         try:
             update_precipitation()
         except Exception:
-            pass
+            print_exception()
+        try:
+            update_alert()
+        except Exception:
+            print_exception()
         return
     elif action == "forecast":
         return send_forecast()
