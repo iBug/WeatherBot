@@ -195,7 +195,7 @@ def update_alert():
             # Already processed
             continue
         date = datetime.datetime.fromtimestamp(timestamp)
-        date_s = date.strftime("%Y年%m月%d日 {} %H:%M:%S").format(texts.weekday(date.weekday()))
+        date_s = date.strftime("%Y年%m月%d日 {} %H:%M").format(texts.weekday(date.weekday()))
         text = "*【{}】*\n".format(escape_markdown(content['title'], 2))
         text += escape_markdown(content['description'], 2) + f"\n\n*发布时间*：{escape_markdown(date_s, 2)}\n\\#预警"
         bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
