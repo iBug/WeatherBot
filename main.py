@@ -25,7 +25,7 @@ from classes import CaiYun, SaveData
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(DIR, "config.json")
-DATA_FILE = os.path.join(DIR, "data.json")
+DATA_DIR = os.path.join(DIR, "data")
 
 matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
 
@@ -122,8 +122,26 @@ def update_realtime():
                f"\n[未来 24 小时温度](https://t.me/ustc_weather/{config['telegram']['temperature_id']})"
     bot.edit_message_text(chat_id=config['telegram']['target'], message_id=config['telegram']['realtime_id'],
                           text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
-    #title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
-    #bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
+
+    title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
+    bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
+
+    save_data = SaveData(os.path.join(DATA_DIR, "realtime.json"))
+    last_update = save_data.data.get("update_id", 0)
+    updates = bot.get_updates(offset=last_update + 1)
+    for update in updates:
+        if update.update_id > last_update:
+            last_update = update.update_id
+        message = update.channel_post
+        if not message:
+            continue
+        if message.new_chat_title:
+            try:
+                message.delete()
+            except telegram.error.BadRequest:
+                pass
+    save_data.data["update_id"] = last_update
+    save_data.save()
 
 
 def update_precipitation():
@@ -185,7 +203,7 @@ def update_alert():
     if alert_data['status'] != "ok":
         return
 
-    save_data = SaveData(DATA_FILE)
+    save_data = SaveData(os.path.join(DATA_DIR, "alert.json"))
     last_timestamp = save_data.data.get('alert_timestamp', 0)
     next_timestamp = last_timestamp
 
