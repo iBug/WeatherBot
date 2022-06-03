@@ -52,8 +52,10 @@ class CaiYun:
 
 
 class SaveData():
+    base_dir = None
+
     def __init__(self, filename):
-        self.filename = filename
+        self.filename = os.path.join(base_dir, filename + ".json")
         self.data = {}
         self.load()
 
@@ -65,3 +67,7 @@ class SaveData():
     def save(self):
         with open(self.filename, 'w') as f:
             json.dump(self.data, f, separators=(',', ':'))
+
+    @classmethod
+    def set_base_dir(cls, base):
+        cls.base_dir = base

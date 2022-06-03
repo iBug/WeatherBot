@@ -27,6 +27,7 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(DIR, "config.json")
 DATA_DIR = os.path.join(DIR, "data")
 
+SaveData.set_base_dir(DATA_DIR)
 matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
 
 
@@ -126,7 +127,7 @@ def update_realtime():
     title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
     bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
 
-    save_data = SaveData(os.path.join(DATA_DIR, "realtime.json"))
+    save_data = SaveData("realtime")
     last_update = save_data.data.get("update_id", 0)
     updates = bot.get_updates(offset=last_update + 1)
     for update in updates:
@@ -203,7 +204,7 @@ def update_alert():
     if alert_data['status'] != "ok":
         return
 
-    save_data = SaveData(os.path.join(DATA_DIR, "alert.json"))
+    save_data = SaveData("alert")
     last_timestamp = save_data.data.get('alert_timestamp', 0)
     next_timestamp = last_timestamp
 
