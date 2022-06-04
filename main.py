@@ -121,11 +121,17 @@ def update_realtime():
                f"\n\n*{date_s}*" \
                f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config['telegram']['precipitation_id']})" \
                f"\n[未来 24 小时温度](https://t.me/ustc_weather/{config['telegram']['temperature_id']})"
-    bot.edit_message_text(chat_id=config['telegram']['target'], message_id=config['telegram']['realtime_id'],
-                          text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
+    try:
+        bot.edit_message_text(chat_id=config['telegram']['target'], message_id=config['telegram']['realtime_id'],
+                              text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
+    except Exception as e:
+        print_exception()
 
     title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
-    bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
+    try:
+        bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
+    except Exception as e:
+        print_exception()
 
     save_data = SaveData("realtime")
     last_update = save_data.data.get("update_id", 0)
