@@ -59,7 +59,7 @@ class SaveData():
     base_dir = None
 
     def __init__(self, filename):
-        self.filename = os.path.join(base_dir, filename + ".json")
+        self.filename = os.path.join(self.base_dir, filename + ".json")
         self.data = {}
         self.load()
 
