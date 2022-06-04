@@ -185,7 +185,7 @@ def update_temperature():
             continue
         props = {'boxstyle': 'circle', 'facecolor': 'white', 'alpha': 0.5, 'ls': ''}
         plt.text(t, v - 0.1, f"{v:.1f}", ha="center", size=11, bbox=props)
-    plt.title("Temperature on {}".format(date.strftime("%B %d, %Y")), weight='bold')
+    plt.title("Temperature on {}".format(date.strftime("%B %-d, %Y")), weight='bold')
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
