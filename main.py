@@ -133,14 +133,14 @@ def update_realtime():
     for update in updates:
         if update.update_id > last_update:
             last_update = update.update_id
-        message = update.channel_post
-        if not message:
-            continue
-        if message.new_chat_title:
-            try:
+        try:
+            message = update.channel_post
+            if not message:
+                continue
+            if message.new_chat_title:
                 message.delete()
-            except telegram.error.BadRequest:
-                pass
+        except Exception as e:
+            print_exception()
     save_data.data["update_id"] = last_update
     save_data.save()
 
