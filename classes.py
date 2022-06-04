@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import random
 import requests
 import sys
 import time
@@ -13,6 +14,7 @@ logger = logging.getLogger()
 class CaiYun:
     def __init__(self, config):
         self.config = dict(config)
+        self.tokens = config.get("tokens", [config.get("token")])
         self.cache_file = os.path.join(DIR, config['cache_file'])
         self.cache_ttl = config['cache_ttl']
 
@@ -31,8 +33,9 @@ class CaiYun:
         if cache:
             return cache
 
+        token = random.choice(self.tokens)
         url = 'https://api.caiyunapp.com/v2.5/{}/{},{}/weather.json?lang=zh_CN&alert=true'.format(
-            self.config['token'], self.config['longitude'], self.config['latitude'])
+            token, self.config['longitude'], self.config['latitude'])
         for _ in range(self.config['retry']):
             try:
                 res = requests.get(url)
