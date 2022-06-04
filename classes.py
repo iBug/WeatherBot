@@ -33,11 +33,12 @@ class CaiYun:
         if cache:
             return cache
 
-        token = random.choice(self.tokens)
-        url = 'https://api.caiyunapp.com/v2.5/{}/{},{}/weather.json?lang=zh_CN&alert=true'.format(
-            token, self.config['longitude'], self.config['latitude'])
         for _ in range(self.config['retry']):
             try:
+                token = random.choice(self.tokens)
+                url = 'https://api.caiyunapp.com/v2.5/{}/{},{}/weather.json?lang=zh_CN&alert=true'
+                url = url.format(token, self.config['longitude'], self.config['latitude'])
+
                 res = requests.get(url)
                 res.raise_for_status()
                 data = res.json()
