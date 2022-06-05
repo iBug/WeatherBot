@@ -21,9 +21,14 @@ class CaiYun:
     def get_cache(self):
         if not os.path.exists(self.cache_file):
             return False
-        with open(self.cache_file, "r") as f:
-            now = time.time()
-            data = json.load(f)
+        try:
+            with open(self.cache_file, "r") as f:
+                now = time.time()
+                data = json.load(f)
+        except Exception:
+            exc_type, exc_val, exc_tb = sys.exc_info()
+            print(f"{exc_type.__name__}: {exc_val}", file=sys.stderr)
+            return None  # invalid cache
         if now < data['server_time'] + self.cache_ttl:
             return data
         return None  # cache expired
