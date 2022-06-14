@@ -38,6 +38,31 @@ skycon_s = {
     'SLEET': '雨夹雪',
 }
 
+alert_type_s = {
+    '01': '台风',
+    '02': '暴雨',
+    '03': '暴雪',
+    '04': '寒潮',
+    '05': '大风',
+    '06': '沙尘暴',
+    '07': '高温',
+    '08': '干旱',
+    '09': '雷电',
+    '10': '冰雹',
+    '11': '霜冻',
+    '12': '大雾',
+    '13': '霾',
+    '14': '道路结冰',
+    '15': '森林火灾',
+    '16': '雷雨大风'
+}
+
+alert_level_s = {
+    '01': '蓝色预警',
+    '02': '黄色预警',
+    '03': '橙色预警',
+    '04': '红色预警'
+}
 
 def skycon(key):
     return skycon_s.get(key, "未知")
@@ -49,4 +74,10 @@ def prec_level(val):
     for upper, s in prec_level_s:
         if val <= upper:
             return s
-    return "未知"
+    return f"未知（{val}）"
+
+def alert(code):
+    try:
+        return alert_type_s[code[:2]] + alert_level_s[code[-2:]]
+    except KeyError:
+        return f"未知（{code}）"

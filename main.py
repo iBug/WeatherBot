@@ -108,6 +108,10 @@ def update_realtime():
     aqi_s = data['air_quality']['description']['chn']
     ultraviolet = data['life_index']['ultraviolet']['desc']
     comfort = data['life_index']['comfort']['desc']
+    alert = api_data['result']['alert']
+    alerts = ""
+    if alert['status'] == 'ok':
+        alerts = " ".join([texts.alert(item['code']) for item in alert['content'] if item['status'] == "预警中"])
 
     heading = "*{}*".format(f"实时天气：{temperature:.0f}°C  {texts.skycon(skycon)}")
     text = f"\n湿度：{humidity:.0%}" \
@@ -117,6 +121,8 @@ def update_realtime():
            f"\n紫外线：{ultraviolet}" \
            f"\n舒适度：{comfort}" \
            ""
+    if alerts:
+        text += "\n"
     text = heading + escape_markdown(text, 2) + \
                f"\n\n*{date_s}*" \
                f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config['telegram']['precipitation_id']})" \
