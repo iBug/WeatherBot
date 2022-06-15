@@ -122,7 +122,7 @@ def update_realtime():
            f"\n舒适度：{comfort}" \
            ""
     if alerts:
-        text += "\n"
+        text += f"\n*{alerts}*"
     text = heading + escape_markdown(text, 2) + \
                f"\n\n*{date_s}*" \
                f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config['telegram']['precipitation_id']})" \
