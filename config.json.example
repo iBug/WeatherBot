@@ -12,6 +12,7 @@
     "precipitation_id": 2,
     "temperature_id": 3,
     "target": "chat id",
-    "token": "bot token"
+    "token": "bot token",
+    "use_updates": true
   }
 }

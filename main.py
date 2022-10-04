@@ -141,20 +141,21 @@ def update_realtime():
         print_exception()
 
     save_data = SaveData("realtime")
-    last_update = save_data.data.get("update_id", 0)
-    updates = bot.get_updates(offset=last_update + 1)
-    for update in updates:
-        if update.update_id > last_update:
-            last_update = update.update_id
-        try:
-            message = update.channel_post
-            if not message:
-                continue
-            if message.new_chat_title:
-                message.delete()
-        except Exception as e:
-            print_exception()
-    save_data.data["update_id"] = last_update
+    if config['telegram']['use_updates']:
+        last_update = save_data.data.get("update_id", 0)
+        updates = bot.get_updates(offset=last_update + 1)
+        for update in updates:
+            if update.update_id > last_update:
+                last_update = update.update_id
+            try:
+                message = update.channel_post
+                if not message:
+                    continue
+                if message.new_chat_title:
+                    message.delete()
+            except Exception as e:
+                print_exception()
+        save_data.data["update_id"] = last_update
     save_data.save()
 
 
