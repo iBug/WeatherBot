@@ -96,7 +96,7 @@ def update_realtime():
         return
 
     date = datetime.datetime.fromtimestamp(api_data['server_time'])
-    date_s = date.strftime("%Y年%m月%d日 {} %H:%M").format(texts.weekday(date.weekday()))
+    date_s = date.strftime("%Y 年 %-m 月 %-d 日 {}，%H:%M").format(texts.weekday(date.weekday()))
     temperature = data['temperature']
     humidity = data['humidity']
     skycon = data['skycon']
@@ -166,7 +166,7 @@ def update_precipitation():
         return
 
     date = datetime.datetime.fromtimestamp(api_data['server_time'])
-    date_s = date.strftime("%Y年%m月%d日 {} %H:%M").format(texts.weekday(date.weekday()))
+    date_s = date.strftime("%Y 年 %-m 月 %-d 日 {}，%H:%M").format(texts.weekday(date.weekday()))
 
     buf = plot_precipitation(api_data)
     caption = api_data['result']['forecast_keypoint'] + f"\n*{date_s}*"
@@ -182,7 +182,7 @@ def update_temperature():
         return
 
     date = datetime.datetime.fromtimestamp(api_data['server_time'])
-    date_s = date.strftime("%Y年%m月%d日 {} %H:%M").format(texts.weekday(date.weekday()))
+    date_s = date.strftime("%Y 年 %-m 月 %-d 日 {}，%H:%M").format(texts.weekday(date.weekday()))
 
     x, y = zip(*[
         (datetime.datetime.fromisoformat(item['datetime']).replace(tzinfo=None), item['value'])
@@ -228,7 +228,7 @@ def update_alert():
             # Already processed
             continue
         date = datetime.datetime.fromtimestamp(timestamp)
-        date_s = date.strftime("%Y年%m月%d日 {} %H:%M").format(texts.weekday(date.weekday()))
+        date_s = date.strftime("%Y 年 %-m 月 %-d 日 {}，%H:%M").format(texts.weekday(date.weekday()))
         text = "*【{}】*\n".format(escape_markdown(content['title'], 2))
         text += escape_markdown(content['description'], 2) + f"\n\n*发布时间*：{escape_markdown(date_s, 2)}\n\\#预警"
         bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
@@ -247,7 +247,7 @@ def send_forecast():
     daily = extract_daily(daily_data, 1)
 
     date = datetime.datetime.fromisoformat(daily['skycon']['date'])
-    date_s = date.strftime("%Y年%m月%d日 ") + texts.weekday(date.weekday())
+    date_s = date.strftime("%Y 年 %-m 月 %-d 日 ") + texts.weekday(date.weekday())
     skycon_day = daily['skycon_08h_20h']['value']
     skycon_night = daily['skycon_20h_32h']['value']
     temp_high = daily['temperature']['max']
