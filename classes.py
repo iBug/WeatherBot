@@ -17,6 +17,7 @@ class CaiYun:
         self.tokens = config.get("tokens", [config.get("token")])
         self.cache_file = os.path.join(DIR, config['cache_file'])
         self.cache_ttl = config['cache_ttl']
+        self.timeout = config['timeout']
 
     def get_cache(self):
         if not os.path.exists(self.cache_file):
@@ -44,7 +45,7 @@ class CaiYun:
                 url = 'https://api.caiyunapp.com/v2.5/{}/{},{}/weather.json?lang=zh_CN&alert=true'
                 url = url.format(token, self.config['longitude'], self.config['latitude'])
 
-                res = requests.get(url)
+                res = requests.get(url, timeout=self.timeout)
                 res.raise_for_status()
                 data = res.json()
                 if data['status'] == 'ok':
