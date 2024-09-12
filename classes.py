@@ -42,7 +42,7 @@ class CaiYun:
         for _ in range(self.config['retry']):
             try:
                 token = random.choice(self.tokens)
-                url = 'https://api.caiyunapp.com/v2.5/{}/{},{}/weather.json?lang=zh_CN&alert=true'
+                url = 'https://api.caiyunapp.com/v2.6/{}/{},{}/weather.json?lang=zh_CN&alert=true'
                 url = url.format(token, self.config['longitude'], self.config['latitude'])
 
                 res = requests.get(url, timeout=self.timeout)
