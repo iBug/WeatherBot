@@ -1,6 +1,6 @@
 {
   "caiyun": {
-    "cache_file": "cache.json",
+    "cache_file": "data/cache.json",
     "cache_ttl": 50,
     "token": "example token",
     "timeout": 10,
