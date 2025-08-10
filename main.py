@@ -169,7 +169,7 @@ def update_precipitation():
     date_s = date.strftime("%Y 年 %-m 月 %-d 日 {}，%H:%M").format(texts.weekday(date.weekday()))
 
     buf = plot_precipitation(api_data)
-    caption = api_data['result']['forecast_keypoint'] + f"\n*{date_s}*"
+    caption = escape_markdown(api_data['result']['forecast_keypoint'], 2) + f"\n*{date_s}*"
     media = telegram.InputMediaPhoto(buf, caption=caption, parse_mode="MarkdownV2")
 
     bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['precipitation_id'], media=media)
@@ -206,7 +206,7 @@ def update_temperature():
     plt.close('all')
 
     buf.seek(0)
-    caption = data['description'] + f"\n*{date_s}*"
+    caption = escape_markdown(data['description'], 2) + f"\n*{date_s}*"
     media = telegram.InputMediaPhoto(buf, caption=caption, parse_mode="MarkdownV2")
 
     bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['temperature_id'], media=media)
