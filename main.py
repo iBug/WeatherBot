@@ -309,11 +309,10 @@ def main(args):
         raise ValueError(f"Unknown action {action}")
 
 
-def lambda_main(event, context):
-    from types import SimpleNamespace
-    args = SimpleNamespace(**event)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="a Telegram weather bot")
+    parser.add_argument("action", type=str, nargs="?")
+    parser.add_argument("-v", "--verbose", metavar="level", type=str, nargs="?", const="debug", default="warning",
+                        choices=[x.lower() for x in logger.level_s], help="logging/verbosity level")
+    args = parser.parse_args()
     main(args)
-    return {
-        'statusCode': 200,
-        'body': "OK\n"
-    }
