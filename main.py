@@ -11,7 +11,6 @@ import logging
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-import requests
 import sys
 import telegram
 import time
@@ -22,10 +21,9 @@ from telegram.utils.helpers import escape_markdown
 
 from classes import CaiYun, SaveData
 
-
 DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(DIR, "config.json")
-DATA_DIR = os.path.join(DIR, "data")
+DATA_DIR = os.environ.get("DATA_DIR", "/tmp/data")
 
 SaveData.set_base_dir(DATA_DIR)
 matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
@@ -276,12 +274,8 @@ def send_forecast():
                      disable_web_page_preview=True)  # , disable_notification=True)
 
 
-def lambda_main(event, context):
-    pass
-
-
 def main(args):
-    logger.logger.setLevel(logger.level_s[args.verbose.upper()])
+    logger.logger.setLevel(logger.level_s.get(args.verbose.upper(), logging.INFO))
     if not args.action:
         logging.warning(f"No action specified, exiting")
         return
@@ -315,10 +309,11 @@ def main(args):
         raise ValueError(f"Unknown action {action}")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="a Telegram weather bot")
-    parser.add_argument("action", type=str, nargs="?")
-    parser.add_argument("-v", "--verbose", metavar="level", type=str, nargs="?", const="debug", default="warning",
-                        choices=[x.lower() for x in logger.level_s], help="logging/verbosity level")
-    args = parser.parse_args()
+def lambda_main(event, context):
+    from types import SimpleNamespace
+    args = SimpleNamespace(**event)
     main(args)
+    return {
+        'statusCode': 200,
+        'body': "OK\n"
+    }

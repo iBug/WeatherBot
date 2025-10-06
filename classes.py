@@ -15,7 +15,7 @@ class CaiYun:
     def __init__(self, config):
         self.config = dict(config)
         self.tokens = config.get("tokens", [config.get("token")])
-        self.cache_file = os.path.join(DIR, config['cache_file'])
+        self.cache_file = os.path.join("/tmp/", config['cache_file'])
         self.cache_ttl = config['cache_ttl']
         self.timeout = config['timeout']
 
@@ -56,6 +56,8 @@ class CaiYun:
                 time.sleep(1)
         else:
             return None
+
+        os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
         with open(self.cache_file, "w") as f:
             json.dump(data, f, separators=(',', ':'))
         return data
