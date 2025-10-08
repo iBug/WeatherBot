@@ -43,7 +43,11 @@ def setup():
     with open(CONFIG_FILE, "r") as f:
         config = json.load(f)
 
-    bot = telegram.Bot(token=config['telegram']['token'])
+    bot = telegram.Bot(
+        token=config['telegram']['token'],
+        base_url=config['telegram'].get('base_url'),
+        base_file_url=config['telegram'].get('base_file_url'),
+    )
     caiyun = CaiYun(config['caiyun'])
     api_data = caiyun.fetch_api()
     if not api_data:

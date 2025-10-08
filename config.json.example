@@ -14,6 +14,8 @@
     "temperature_id": 3,
     "target": "chat id",
     "token": "bot token",
+    "base_url": "https://api.telegram.org/bot",
+    "base_file_url": "https://api.telegram.org/file/bot",
     "use_updates": true
   }
 }
