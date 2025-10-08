@@ -238,7 +238,7 @@ def update_alert():
         bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
                          disable_web_page_preview=True)
         if timestamp > next_timestamp:
-            next_timestamp = timestamp 
+            next_timestamp = timestamp
     save_data.data['alert_timestamp'] = next_timestamp
     save_data.save()
 
