@@ -16,6 +16,7 @@ import sys
 import telegram
 import time
 import traceback
+import yaml
 
 import texts
 from telegram.utils.helpers import escape_markdown
@@ -24,7 +25,7 @@ from classes import CaiYun, SaveData
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-CONFIG_FILE = os.path.join(DIR, "config.json")
+CONFIG_FILE = os.path.join(DIR, "config.yaml")
 DATA_DIR = os.path.join(DIR, "data")
 
 SaveData.set_base_dir(DATA_DIR)
@@ -41,7 +42,7 @@ def print_exception(file=sys.stderr):
 
 def setup():
     with open(CONFIG_FILE, "r") as f:
-        config = json.load(f)
+        config = yaml.safe_load(f)
 
     bot = telegram.Bot(
         token=config['telegram']['token'],
@@ -117,7 +118,7 @@ def update_realtime():
     if alert['status'] == 'ok':
         alerts = " ".join([texts.alert(item['code']) for item in alert['content'] if item['status'] == "预警中"])
 
-    heading = "*{}*".format(f"实时天气：{temperature:.0f}°C  {texts.skycon(skycon)}")
+    heading = "*{}*".format(escape_markdown(f"实时天气：{temperature:.0f}°C  {texts.skycon(skycon)}", 2))
     text = f"\n湿度：{humidity:.0%}" \
            f"{precipitation_s}" \
            f"\n能见度：{visibility:.1f} km" \

@@ -4,4 +4,5 @@ WORKDIR /app
 ADD requirements.txt ./
 RUN pip3 --no-cache-dir install -Ur requirements.txt
 
+ENV PYTHONWARNINGS=ignore
 ADD . ./
