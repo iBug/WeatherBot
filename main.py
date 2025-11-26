@@ -41,6 +41,16 @@ def print_exception(file=sys.stderr):
     print("{}: {}\n{}".format(exc_type.__name__, exc_obj, exc_tb), file=file)
 
 
+@contextmanager
+def log_exception():
+    try:
+        yield
+    except telegram.error.TimedOut:
+        print("Telegram API timed out")
+    except Exception:
+        print_exception()
+
+
 def setup():
     with open(CONFIG_FILE, "r") as f:
         config = yaml.safe_load(f)
@@ -135,17 +145,13 @@ def update_realtime():
                f"\n\n*{date_s}*" \
                f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config.telegram.precipitation_id})" \
                f"\n[未来 24 小时温度](https://t.me/ustc_weather/{config.telegram.temperature_id})"
-    try:
+    with log_exception():
         bot.edit_message_text(chat_id=config.telegram.target, message_id=config.telegram.realtime_id,
                               text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
-    except Exception as e:
-        print_exception()
 
     title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
-    try:
+    with log_exception():
         bot.set_chat_title(chat_id=config.telegram.target, title=title)
-    except Exception as e:
-        print_exception()
 
     save_data = SaveData("realtime")
     if config.telegram.use_updates:
@@ -154,14 +160,12 @@ def update_realtime():
         for update in updates:
             if update.update_id > last_update:
                 last_update = update.update_id
-            try:
+            with log_exception():
                 message = update.channel_post
                 if not message:
                     continue
                 if message.new_chat_title:
                     message.delete()
-            except Exception as e:
-                print_exception()
         save_data.data["update_id"] = last_update
     save_data.save()
 
@@ -281,16 +285,6 @@ def send_forecast():
     text = f"\\#天气预报\n*{date_s}*" + escape_markdown(text, 2)
     bot.send_message(chat_id=config.telegram.target, text=text, parse_mode="MarkdownV2",
                      disable_web_page_preview=True)  # , disable_notification=True)
-
-
-@contextmanager
-def log_exception():
-    try:
-        yield
-    except telegram.error.TimedOut:
-        print("Telegram API timed out")
-    except Exception:
-        print_exception()
 
 
 def main(args):
