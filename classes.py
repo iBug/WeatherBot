@@ -6,18 +6,55 @@ import requests
 import sys
 import time
 
+from pydantic import BaseModel, ConfigDict
+from typing import Optional
+
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger()
 
 
+class CaiYunConfig(BaseModel):
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+    cache_file: str
+    cache_ttl: int
+    token: str
+    timeout: int
+    latitude: str
+    longitude: str
+    retry: int
+
+
+class TelegramConfig(BaseModel):
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+    realtime_id: int
+    precipitation_id: int
+    temperature_id: int
+    target: str | int
+    token: str
+    base_url: Optional[str] = None
+    base_file_url: Optional[str] = None
+    use_updates: bool = False
+
+
+class ConfigFile(BaseModel):
+    caiyun: CaiYunConfig
+    telegram: TelegramConfig
+
+
 class CaiYun:
-    def __init__(self, config):
-        self.config = dict(config)
-        self.tokens = config.get("tokens", [config.get("token")])
-        self.cache_file = os.path.join(DIR, config['cache_file'])
-        self.cache_ttl = config['cache_ttl']
-        self.timeout = config['timeout']
+    def __init__(self, config: CaiYunConfig):
+        self.config = config
+        self.tokens = [config.token]
+        self.cache_file = os.path.join(DIR, config.cache_file)
+        self.cache_ttl = config.cache_ttl
+        self.timeout = config.timeout
+
+    @property
+    def token(self) -> str:
+        return random.choice(self.tokens)
 
     def get_cache(self):
         if not os.path.exists(self.cache_file):
@@ -39,11 +76,10 @@ class CaiYun:
         if cache:
             return cache
 
-        for _ in range(self.config['retry']):
+        for _ in range(self.config.retry):
             try:
-                token = random.choice(self.tokens)
                 url = 'https://api.caiyunapp.com/v2.6/{}/{},{}/weather.json?lang=zh_CN&alert=true'
-                url = url.format(token, self.config['longitude'], self.config['latitude'])
+                url = url.format(self.token, self.config.longitude, self.config.latitude)
 
                 res = requests.get(url, timeout=self.timeout)
                 res.raise_for_status()

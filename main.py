@@ -22,7 +22,7 @@ from contextlib import contextmanager
 import texts
 from telegram.utils.helpers import escape_markdown
 
-from classes import CaiYun, SaveData
+from classes import ConfigFile, CaiYun, SaveData
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -44,13 +44,14 @@ def print_exception(file=sys.stderr):
 def setup():
     with open(CONFIG_FILE, "r") as f:
         config = yaml.safe_load(f)
+        config = ConfigFile.model_validate(config)
 
     bot = telegram.Bot(
-        token=config['telegram']['token'],
-        base_url=config['telegram'].get('base_url'),
-        base_file_url=config['telegram'].get('base_file_url'),
+        token=config.telegram.token,
+        base_url=config.telegram.base_url,
+        base_file_url=config.telegram.base_file_url,
     )
-    caiyun = CaiYun(config['caiyun'])
+    caiyun = CaiYun(config.caiyun)
     api_data = caiyun.fetch_api()
     if not api_data:
         return config, bot, None
@@ -132,22 +133,22 @@ def update_realtime():
         text += f"\n*{escape_markdown(alerts, 2)}*"
     text = heading + text + \
                f"\n\n*{date_s}*" \
-               f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config['telegram']['precipitation_id']})" \
-               f"\n[未来 24 小时温度](https://t.me/ustc_weather/{config['telegram']['temperature_id']})"
+               f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config.telegram.precipitation_id})" \
+               f"\n[未来 24 小时温度](https://t.me/ustc_weather/{config.telegram.temperature_id})"
     try:
-        bot.edit_message_text(chat_id=config['telegram']['target'], message_id=config['telegram']['realtime_id'],
+        bot.edit_message_text(chat_id=config.telegram.target, message_id=config.telegram.realtime_id,
                               text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
     except Exception as e:
         print_exception()
 
     title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
     try:
-        bot.set_chat_title(chat_id=config['telegram']['target'], title=title)
+        bot.set_chat_title(chat_id=config.telegram.target, title=title)
     except Exception as e:
         print_exception()
 
     save_data = SaveData("realtime")
-    if config['telegram']['use_updates']:
+    if config.telegram.use_updates:
         last_update = save_data.data.get("update_id", 0)
         updates = bot.get_updates(offset=last_update + 1)
         for update in updates:
@@ -178,7 +179,7 @@ def update_precipitation():
     caption = escape_markdown(api_data['result']['forecast_keypoint'], 2) + f"\n*{date_s}*"
     media = telegram.InputMediaPhoto(buf, caption=caption, parse_mode="MarkdownV2")
 
-    bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['precipitation_id'], media=media)
+    bot.edit_message_media(chat_id=config.telegram.target, message_id=config.telegram.precipitation_id, media=media)
 
 
 def update_temperature():
@@ -215,7 +216,7 @@ def update_temperature():
     caption = escape_markdown(data['description'], 2) + f"\n*{date_s}*"
     media = telegram.InputMediaPhoto(buf, caption=caption, parse_mode="MarkdownV2")
 
-    bot.edit_message_media(chat_id=config['telegram']['target'], message_id=config['telegram']['temperature_id'], media=media)
+    bot.edit_message_media(chat_id=config.telegram.target, message_id=config.telegram.temperature_id, media=media)
 
 
 def update_alert():
@@ -237,7 +238,7 @@ def update_alert():
         date_s = date.strftime("%Y 年 %-m 月 %-d 日 {}，%H:%M").format(texts.weekday(date.weekday()))
         text = "*【{}】*\n".format(escape_markdown(content['title'], 2))
         text += escape_markdown(content['description'], 2) + f"\n\n*发布时间*：{escape_markdown(date_s, 2)}\n\\#预警"
-        bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
+        bot.send_message(chat_id=config.telegram.target, text=text, parse_mode="MarkdownV2",
                          disable_web_page_preview=True)
         if timestamp > next_timestamp:
             next_timestamp = timestamp
@@ -278,7 +279,7 @@ def send_forecast():
            f"\n舒适度：{comfort}" \
            ""
     text = f"\\#天气预报\n*{date_s}*" + escape_markdown(text, 2)
-    bot.send_message(chat_id=config['telegram']['target'], text=text, parse_mode="MarkdownV2",
+    bot.send_message(chat_id=config.telegram.target, text=text, parse_mode="MarkdownV2",
                      disable_web_page_preview=True)  # , disable_notification=True)
 
 
