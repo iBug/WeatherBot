@@ -17,6 +17,7 @@ import telegram
 import time
 import traceback
 import yaml
+from contextlib import contextmanager
 
 import texts
 from telegram.utils.helpers import escape_markdown
@@ -281,8 +282,14 @@ def send_forecast():
                      disable_web_page_preview=True)  # , disable_notification=True)
 
 
-def lambda_main(event, context):
-    pass
+@contextmanager
+def log_exception():
+    try:
+        yield
+    except telegram.error.TimedOut:
+        print("Telegram API timed out")
+    except Exception:
+        print_exception()
 
 
 def main(args):
@@ -293,29 +300,28 @@ def main(args):
     action = args.action
     logging.info(f"Action: {action}")
     if action == "cron":
-        try:
+        with log_exception():
             update_realtime()
-        except Exception:
-            print_exception()
-        try:
+        with log_exception():
             update_precipitation()
-        except Exception:
-            print_exception()
-        try:
+        with log_exception():
             update_alert()
-        except Exception:
-            print_exception()
         return
     elif action == "forecast":
-        return send_forecast()
+        with log_exception():
+            return send_forecast()
     elif action == "realtime":
-        return update_realtime()
+        with log_exception():
+            return update_realtime()
     elif action == "alert":
-        return update_alert()
+        with log_exception():
+            return update_alert()
     elif action == "precipitation":
-        return update_precipitation()
+        with log_exception():
+            return update_precipitation()
     elif action == "temperature":
-        return update_temperature()
+        with log_exception():
+            return update_temperature()
     else:
         raise ValueError(f"Unknown action {action}")
 
