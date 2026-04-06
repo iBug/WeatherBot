@@ -1,3 +1,10 @@
+.dockerignore
+.git
+.gitignore
+__pycache__/
 config.json
+config.yaml
 cron.sh
 data/
+home/
+Makefile

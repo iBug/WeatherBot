@@ -25,6 +25,8 @@ class CaiYunConfig(BaseModel):
     longitude: str
     retry: int
 
+    api_version: str = "v2.6"
+
 
 class TelegramConfig(BaseModel):
     model_config = ConfigDict(coerce_numbers_to_str=True)
@@ -78,10 +80,9 @@ class CaiYun:
 
         for _ in range(self.config.retry):
             try:
-                url = 'https://api.caiyunapp.com/v2.6/{}/{},{}/weather.json?lang=zh_CN&alert=true'
-                url = url.format(self.token, self.config.longitude, self.config.latitude)
-
-                res = requests.get(url, timeout=self.timeout)
+                url = f'https://api.caiyunapp.com/{self.config.api_version}/{self.token}/{self.config.longitude},{self.config.latitude}/weather?alert=true'
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                res = requests.get(url, headers=headers, timeout=self.timeout)
                 res.raise_for_status()
                 data = res.json()
                 if data['status'] == 'ok':
@@ -93,7 +94,7 @@ class CaiYun:
         else:
             return None
         with open(self.cache_file, "w") as f:
-            json.dump(data, f, separators=(',', ':'))
+            json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
         return data
 
 
