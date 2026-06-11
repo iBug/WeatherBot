@@ -33,22 +33,38 @@ SaveData.set_base_dir(DATA_DIR)
 matplotlib.rc("font", **{'family': "sans-serif", 'size': 13, 'sans-serif': ["Amazon Ember", "Gotham", "DejaVu Sans"]})
 
 
-def print_exception(file=sys.stderr):
+def print_exception(prefix="", file=sys.stderr):
     exc_type, exc_obj, exc_tb = sys.exc_info()
     if str(exc_obj).startswith("Message is not modified:"):
         return
     exc_tb = traceback.format_exc()
-    print("{}: {}\n{}".format(exc_type.__name__, exc_obj, exc_tb), file=file)
+    print("{}{}: {}\n{}".format(prefix, exc_type.__name__, exc_obj, exc_tb), file=file)
 
 
 @contextmanager
-def log_exception():
+def log_exception(prefix=""):
+    if prefix:
+        prefix = f"{prefix}: "
     try:
         yield
     except telegram.error.TimedOut:
-        print("Telegram API timed out")
+        print(f"{prefix}Telegram API timed out")
     except Exception:
-        print_exception()
+        print_exception(prefix)
+
+
+def retry_on_timeout(count=3):
+    def decorator(f):
+        def wrapped(*args, **kwargs):
+            for i in range(count):
+                try:
+                    return f(*args, **kwargs)
+                except telegram.error.TimedOut:
+                    if i == count - 1:
+                        raise
+                    continue
+        return wrapped
+    return decorator
 
 
 def setup():
@@ -103,6 +119,7 @@ def plot_precipitation(api_data):
         plt.close('all')
         return buf.read()
     except Exception:
+        print_exception()
         return None
 
 
@@ -145,12 +162,12 @@ def update_realtime():
                f"\n\n*{date_s}*" \
                f"\n[未来 2 小时降水](https://t.me/ustc_weather/{config.telegram.precipitation_id})" \
                f"\n[未来 24 小时温度](https://t.me/ustc_weather/{config.telegram.temperature_id})"
-    with log_exception():
+    with log_exception("Update realtime message"):
         bot.edit_message_text(chat_id=config.telegram.target, message_id=config.telegram.realtime_id,
                               text=text, parse_mode="MarkdownV2", disable_web_page_preview=True)
 
     title = f"USTC Weather: {temperature:.0f}°C {texts.skycon(skycon)}"
-    with log_exception():
+    with log_exception("Update channel title"):
         bot.set_chat_title(chat_id=config.telegram.target, title=title)
 
     save_data = SaveData("realtime")
@@ -160,7 +177,7 @@ def update_realtime():
         for update in updates:
             if update.update_id > last_update:
                 last_update = update.update_id
-            with log_exception():
+            with log_exception("Receive updates from Telegram"):
                 message = update.channel_post
                 if not message:
                     continue
