@@ -62,6 +62,7 @@ def retry_on_timeout(count=3):
                 except telegram.error.TimedOut:
                     if i == count - 1:
                         raise
+                    time.sleep(1)
                     continue
         return wrapped
     return decorator
